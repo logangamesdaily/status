@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Service Status</title>
+  <style>
+    :root{
+      --bg:#0b1020; --card:#0f1724; --muted:#9aa4b2;
+      --good:#16a34a; --degraded:#f59e0b; --down:#ef4444; --black:#000;
+      --glass: rgba(255,255,255,0.03);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+    html,body{height:100%; margin:0; background:linear-gradient(180deg,#071022 0%,#071429 100%); color:#e6eef8}
+    .wrap{max-width:920px;margin:48px auto;padding:28px;background:var(--card);border-radius:12px;box-shadow:0 8px 30px rgba(2,6,23,.6)}
+    h1{margin:0 0 6px;font-size:20px}
+    p.lead{margin:0 0 18px;color:var(--muted)}
+    .grid{display:grid;grid-template-columns:1fr 260px;gap:18px;align-items:start}
+    .services{display:grid;gap:12px}
+    .service{display:flex;align-items:center;gap:14px;padding:12px;border-radius:10px;background:var(--glass);border:1px solid rgba(255,255,255,0.03)}
+    .dot{width:14px;height:14px;border-radius:50%;flex:0 0 14px;background:var(--muted);box-shadow:0 0 8px rgba(0,0,0,.6)}
+    .meta{flex:1}
+    .name{font-weight:600}
+    .url{color:var(--muted);font-size:13px}
+    .status{font-weight:700;min-width:120px;text-align:right}
+    .small{font-size:13px;color:var(--muted)}
+    .incidents{padding:12px;border-radius:10px;background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);border:1px dashed rgba(255,255,255,0.02)}
+    .incident-item{padding:10px;border-radius:8px;margin-bottom:10px;background:rgba(0,0,0,0.12)}
+    footer{margin-top:14px;color:var(--muted);font-size:13px}
+    .spinner{width:14px;height:14px;border-radius:50%;border:2px solid rgba(255,255,255,0.06);border-top-color:rgba(255,255,255,0.35);animation:spin .9s linear infinite;display:inline-block}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .muted{color:var(--muted)}
+    a { color: #9ad6ff; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="wrap" role="main">
+    <h1>Service Status</h1>
+    <p class="lead">Quick status checks for selected services. Results are best-effort from the browser; CORS or network restrictions may cause "Potentially down" results even when the service is up.</p>
+
+    <div class="grid">
+      <div>
+        <div class="services" id="services"></div>
+        <footer>Last checked: <span id="lastChecked">—</span></footer>
+      </div>
+
+      <div class="incidents">
+        <h3 style="margin-top:0">Incidents</h3>
+        <div id="incidentsList" class="small muted">Loading incidents.json…</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // CONFIGURE TARGET HOSTS HERE
+    const TARGETS = [
+      { name: "logangamesdaily", label: "logangamesdaily.co.uk", url: "https://logangamesdaily.co.uk/" },
+      { name: "systole", label: "systole.co.uk", url: "https://systole.co.uk/" }
+    ];
+
+    const servicesEl = document.getElementById('services');
+    const lastCheckedEl = document.getElementById('lastChecked');
+    const incidentsListEl = document.getElementById('incidentsList');
+
+    function mkServiceCard(t) {
+      const wrap = document.createElement('div'); wrap.className='service'; wrap.id = 'svc-' + t.name;
+      const dot = document.createElement('div'); dot.className='dot'; dot.dataset.state = 'unknown';
+      const meta = document.createElement('div'); meta.className='meta';
+      const title = document.createElement('div'); title.className='name'; title.textContent = t.label;
+      const url = document.createElement('div'); url.className='url'; url.textContent = t.url;
+      const status = document.createElement('div'); status.className='status'; status.innerHTML = '<span class="spinner"></span>';
+      meta.appendChild(title); meta.appendChild(url);
+      wrap.appendChild(dot); wrap.appendChild(meta); wrap.appendChild(status);
+      return wrap;
+    }
+
+    // append service cards
+    TARGETS.forEach(t => servicesEl.appendChild(mkServiceCard(t)));
+
+    // Basic fetch with timeout
+    function fetchWithTimeout(resource, options = {}) {
+      const { timeout = 6000 } = options;
+      return new Promise((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error('timeout')), timeout);
+        fetch(resource, { method: 'GET', cache: 'no-store' })
+          .then(r => { clearTimeout(timer); resolve(r); })
+          .catch(err => { clearTimeout(timer); reject(err); });
+      });
+    }
+
+    // Interpret result and update UI
+    function setStatus(name, state, label, code) {
+      const card = document.getElementById('svc-' + name);
+      if (!card) return;
+      const dot = card.querySelector('.dot');
+      const status = card.querySelector('.status');
+      dot.dataset.state = state;
+      if (state === 'up') { dot.style.background = getComputedStyle(document.documentElement).getPropertyValue('--good'); status.textContent = label || 'Up' + (code ? ' — ' + code : ''); }
+      else if (state === 'degraded') { dot.style.background = getComputedStyle(document.documentElement).getPropertyValue('--degraded'); status.textContent = label || 'Degraded' + (code ? ' — ' + code : ''); }
+      else if (state === 'down') { dot.style.background = getComputedStyle(document.documentElement).getPropertyValue('--down'); status.textContent = label || 'Down' + (code ? ' — ' + code : ''); }
+      else { dot.style.background = getComputedStyle(document.documentElement).getPropertyValue('--muted'); status.textContent = label || 'Unknown'; }
+    }
+
+    async function checkTarget(t) {
+      const name = t.name;
+      try {
+        // Try to fetch the root; many sites will block cross-origin requests in browsers.
+        const resp = await fetchWithTimeout(t.url, { timeout: 7000 });
+        // If we get a Response object, interpret status
+        if (resp && typeof resp.status === 'number') {
+          if (resp.status >= 200 && resp.status < 300) {
+            setStatus(name, 'up', '200 OK', resp.status);
+          } else if (resp.status >= 300 && resp.status < 400) {
+            setStatus(name, 'degraded', 'Redirect', resp.status);
+          } else if (resp.status >= 400 && resp.status < 600) {
+            setStatus(name, 'down', 'Bad response', resp.status);
+          } else {
+            setStatus(name, 'unknown', 'Unexpected response', resp.status);
+          }
+        } else {
+          // fetch returned something unexpected (rare)
+          setStatus(name, 'unknown', 'No status', null);
+        }
+      } catch (err) {
+        // Network error, timeout, or CORS blocked fetch will surface here
+        // Distinguish timeout vs CORS vs network via message where possible
+        const msg = (err && err.message) ? err.message.toLowerCase() : '';
+        if (msg.includes('timeout')) {
+          setStatus(name, 'down', 'Timeout');
+        } else if (msg.includes('failed') || msg.includes('network')) {
+          setStatus(name, 'down', 'Network error');
+        } else {
+          // Likely CORS or opaque response
+          // Conservative: mark as potentially down but show note
+          setStatus(name, 'degraded', 'Potentially down (CORS / blocked)');
+        }
+      }
+    }
+
+    async function loadIncidents() {
+      try {
+        const res = await fetch('/incidents.json', { cache: 'no-store' });
+        if (!res.ok) throw new Error('incidents.json fetch failed ' + res.status);
+        const data = await res.json();
+        renderIncidents(data);
+      } catch (e) {
+        incidentsListEl.innerHTML = '<div class="small muted">Incidents unavailable; using local fallback.</div>';
+        // fallback: show a short example if incidents.json not available
+        incidentsListEl.innerHTML += '<div class="incident-item"><strong>No active incidents</strong><div class="small muted">\/incidents.json missing or blocked</div></div>';
+      }
+    }
+
+    function renderIncidents(list) {
+      if (!list || Object.keys(list).length === 0) {
+        incidentsListEl.innerHTML = '<div class="incident-item"><strong>No active incidents</strong></div>';
+        return;
+      }
+      incidentsListEl.innerHTML = '';
+      // list is expected to be an object where keys are "1/incident.JSON" or similar
+      Object.keys(list).forEach(k => {
+        const path = list[k];
+        // attempt to fetch each incident file
+        const container = document.createElement('div');
+        container.className = 'incident-item';
+        container.textContent = 'Loading ' + path + '…';
+        incidentsListEl.appendChild(container);
+        fetch(path, { cache: 'no-store' }).then(r => {
+          if (!r.ok) throw new Error('not ok ' + r.status);
+          return r.json();
+        }).then(inc => {
+          const sevColor = (inc.severity === 1) ? 'var(--degraded)' : (inc.severity === 2) ? 'var(--down)' : (inc.severity === 3) ? 'black' : 'var(--muted)';
+          container.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center"><div><strong>' + escapeHtml(inc.title || 'Untitled') + '</strong><div class="small muted">' + escapeHtml(inc.description || '') + '</div></div><div style="text-align:right"><div style="font-weight:700;color:' + sevColor + '">Severity ' + inc.severity + '</div><div class="small muted">' + (inc.from || 'N/A') + ' → ' + (inc.to || 'N/A') + '</div></div></div>';
+        }).catch(err => {
+          container.innerHTML = '<strong>' + escapeHtml(path) + '</strong><div class="small muted">Could not load incident file</div>';
+        });
+      });
+    }
+
+    function escapeHtml(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+    async function runChecks() {
+      lastCheckedEl.textContent = new Date().toLocaleString();
+      // reset UI spinners
+      TARGETS.forEach(t => {
+        const card = document.getElementById('svc-' + t.name);
+        if (card) {
+          card.querySelector('.status').innerHTML = '<span class="spinner"></span>';
+          card.querySelector('.dot').style.background = getComputedStyle(document.documentElement).getPropertyValue('--muted');
+        }
+      });
+
+      await Promise.all(TARGETS.map(t => checkTarget(t)));
+    }
+
+    // initial load
+    loadIncidents();
+    runChecks();
+
+    // auto-refresh every 90 seconds
+    setInterval(() => { loadIncidents(); runChecks(); }, 90000);
+  </script>
+</body>
+</html>
