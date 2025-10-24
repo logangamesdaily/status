@@ -1,0 +1,7 @@
+{
+  "severity": 3,
+  "title": "Total blackout",
+  "description": "The server has inexplicably gone down and cannot be recovered manually. Services will resume normally as soon as possible.",
+  "from": "24/10/2025 23:30",
+  "to": "N/A"
+}
