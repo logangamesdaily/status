@@ -3,56 +3,214 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Service Status</title>
+  <title>Service Status — LoganGamesDaily</title>
+  <meta name="description" content="Live and historical service status for LoganGamesDaily." />
   <style>
-    :root{
-      --bg:#0b1020; --card:#0f1724; --muted:#9aa4b2;
-      --good:#16a34a; --degraded:#f59e0b; --down:#ef4444; --black:#000;
-      --glass: rgba(255,255,255,0.03);
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    :root {
+      --bg: #0f1724;
+      --muted: #98a0b3;
+      --accent: #6ee7b7;
+      --good: #16a34a;
+      --degraded: #f59e0b;
+      --down: #ef4444;
+      --radius: 14px;
+      color-scheme: dark;
     }
-    html,body{height:100%; margin:0; background:linear-gradient(180deg,#071022 0%,#071429 100%); color:#e6eef8}
-    .wrap{max-width:920px;margin:48px auto;padding:28px;background:var(--card);border-radius:12px;box-shadow:0 8px 30px rgba(2,6,23,.6)}
-    h1{margin:0 0 6px;font-size:20px}
-    p.lead{margin:0 0 18px;color:var(--muted)}
-    .grid{display:grid;grid-template-columns:1fr 260px;gap:18px;align-items:start}
-    .services{display:grid;gap:12px}
-    .service{display:flex;align-items:center;gap:14px;padding:12px;border-radius:10px;background:var(--glass);border:1px solid rgba(255,255,255,0.03)}
-    .dot{width:14px;height:14px;border-radius:50%;flex:0 0 14px;background:var(--muted);box-shadow:0 0 8px rgba(0,0,0,.6)}
-    .meta{flex:1}
-    .name{font-weight:600}
-    .url{color:var(--muted);font-size:13px}
-    .status{font-weight:700;min-width:120px;text-align:right}
-    .small{font-size:13px;color:var(--muted)}
-    .incidents{padding:12px;border-radius:10px;background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);border:1px dashed rgba(255,255,255,0.02)}
-    .incident-item{padding:10px;border-radius:8px;margin-bottom:10px;background:rgba(0,0,0,0.12)}
-    footer{margin-top:14px;color:var(--muted);font-size:13px}
-    .spinner{width:14px;height:14px;border-radius:50%;border:2px solid rgba(255,255,255,0.06);border-top-color:rgba(255,255,255,0.35);animation:spin .9s linear infinite;display:inline-block}
-    @keyframes spin{to{transform:rotate(360deg)}}
-    .muted{color:var(--muted)}
-    a { color: #9ad6ff; text-decoration: none; }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      color: #e8eef7;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    /* Animated glow background */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(600px 400px at 50% 20%, rgba(110,231,183,0.06), transparent 70%);
+      animation: pulseGlow 8s ease-in-out infinite alternate;
+      z-index: 0;
+    }
+    @keyframes pulseGlow {
+      0% { opacity: 0.4; transform: scale(1); }
+      100% { opacity: 0.7; transform: scale(1.05); }
+    }
+
+    main {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 900px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+      border-radius: var(--radius);
+      box-shadow: 0 8px 30px rgba(2,6,23,0.6);
+      border: 1px solid rgba(255,255,255,0.04);
+      padding: 28px 24px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 26px;
+    }
+    header h1 {
+      font-size: 1.6rem;
+      margin-bottom: 8px;
+    }
+    header p {
+      color: var(--muted);
+      font-size: 0.95rem;
+      line-height: 1.45;
+    }
+
+    .services {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .service {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 12px 16px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.04);
+      flex-wrap: wrap;
+    }
+
+    .meta { flex: 1; min-width: 160px; }
+    .name { font-weight: 600; }
+    .url { color: var(--muted); font-size: 0.8rem; }
+
+    .dot {
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: var(--muted);
+      flex: 0 0 14px;
+    }
+
+    .status { min-width: 90px; font-weight: 600; text-align: right; }
+
+    .spinner {
+      width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,0.06);
+      border-top-color: rgba(255,255,255,0.35);
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+      display: inline-block;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    footer {
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 20px;
+    }
+
+    .tabs {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .tab {
+      background: rgba(110,231,183,0.1);
+      border: 1px solid rgba(110,231,183,0.2);
+      color: var(--accent);
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .tab.active {
+      background: rgba(110,231,183,0.2);
+      box-shadow: 0 0 8px rgba(110,231,183,0.2);
+    }
+
+    .incidents {
+      padding: 16px;
+      background: rgba(255,255,255,0.02);
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.04);
+    }
+    .incident-item {
+      background: rgba(0,0,0,0.1);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 10px;
+    }
+
+    .calendar-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .calendar-nav button {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: #e8eef7;
+      border-radius: 6px;
+      padding: 6px 10px;
+      cursor: pointer;
+    }
+    .calendar-nav input[type="date"] {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: #e8eef7;
+      border-radius: 6px;
+      padding: 4px 8px;
+    }
+
+    @media (max-width: 700px) {
+      main { padding: 20px; }
+      .service { flex-direction: column; align-items: flex-start; }
+      .status { text-align: left; margin-top: 6px; }
+    }
   </style>
 </head>
 <body>
-  <div class="wrap" role="main">
-    <h1>Service Status</h1>
-    <p class="lead">Quick status checks for selected services. Results are best-effort from the browser; CORS or network restrictions may cause "Potentially down" results even when the service is up.</p>
+  <main role="main">
+    <header>
+      <h1>Service Status</h1>
+      <p>Live status and incident history for LoganGamesDaily services.</p>
+    </header>
 
-    <div class="grid">
-      <div>
-        <div class="services" id="services"></div>
-        <footer>Last checked: <span id="lastChecked">—</span></footer>
-      </div>
+    <section class="services" id="services"></section>
 
-      <div class="incidents">
-        <h3 style="margin-top:0">Incidents</h3>
-        <div id="incidentsList" class="small muted">Loading incidents.json…</div>
-      </div>
+    <div class="tabs">
+      <div class="tab active" id="tab-current">Current Incidents</div>
+      <div class="tab" id="tab-past">Past Incidents</div>
     </div>
-  </div>
+
+    <section class="incidents" id="incidents">
+      <div id="currentIncidents">Loading incidents…</div>
+      <div id="pastIncidents" style="display:none;">
+        <div class="calendar-nav">
+          <button id="prevDay">◀</button>
+          <input type="date" id="datePicker" />
+          <button id="nextDay">▶</button>
+        </div>
+        <div id="pastList">No incidents for this date.</div>
+      </div>
+    </section>
+
+    <footer>Last checked: <span id="lastChecked">—</span></footer>
+  </main>
 
   <script>
-    // CONFIGURE TARGET HOSTS HERE
     const TARGETS = [
       { name: "logangamesdaily", label: "logangamesdaily.co.uk", url: "https://logangamesdaily.co.uk/" },
       { name: "systole", label: "systole.co.uk", url: "https://systole.co.uk/" }
@@ -60,144 +218,139 @@
 
     const servicesEl = document.getElementById('services');
     const lastCheckedEl = document.getElementById('lastChecked');
-    const incidentsListEl = document.getElementById('incidentsList');
+    const currentEl = document.getElementById('currentIncidents');
+    const pastEl = document.getElementById('pastIncidents');
+    const pastListEl = document.getElementById('pastList');
+    const datePicker = document.getElementById('datePicker');
 
-    function mkServiceCard(t) {
-      const wrap = document.createElement('div'); wrap.className='service'; wrap.id = 'svc-' + t.name;
-      const dot = document.createElement('div'); dot.className='dot'; dot.dataset.state = 'unknown';
-      const meta = document.createElement('div'); meta.className='meta';
-      const title = document.createElement('div'); title.className='name'; title.textContent = t.label;
-      const url = document.createElement('div'); url.className='url'; url.textContent = t.url;
-      const status = document.createElement('div'); status.className='status'; status.innerHTML = '<span class="spinner"></span>';
-      meta.appendChild(title); meta.appendChild(url);
-      wrap.appendChild(dot); wrap.appendChild(meta); wrap.appendChild(status);
-      return wrap;
-    }
+    TARGETS.forEach(t => {
+      const wrap = document.createElement('div');
+      wrap.className = 'service';
+      wrap.id = 'svc-' + t.name;
+      wrap.innerHTML = `
+        <div class="dot"></div>
+        <div class="meta">
+          <div class="name">${t.label}</div>
+          <div class="url">${t.url}</div>
+        </div>
+        <div class="status"><span class="spinner"></span></div>
+      `;
+      servicesEl.appendChild(wrap);
+    });
 
-    // append service cards
-    TARGETS.forEach(t => servicesEl.appendChild(mkServiceCard(t)));
-
-    // Basic fetch with timeout
-    function fetchWithTimeout(resource, options = {}) {
+    async function fetchWithTimeout(resource, options = {}) {
       const { timeout = 6000 } = options;
       return new Promise((resolve, reject) => {
         const timer = setTimeout(() => reject(new Error('timeout')), timeout);
-        fetch(resource, { method: 'GET', cache: 'no-store' })
+        fetch(resource, { cache: 'no-store' })
           .then(r => { clearTimeout(timer); resolve(r); })
-          .catch(err => { clearTimeout(timer); reject(err); });
+          .catch(e => { clearTimeout(timer); reject(e); });
       });
     }
 
-    // Interpret result and update UI
-    function setStatus(name, state, label, code) {
-      const card = document.getElementById('svc-' + name);
-      if (!card) return;
+    async function checkTarget(t) {
+      const card = document.getElementById('svc-' + t.name);
       const dot = card.querySelector('.dot');
       const status = card.querySelector('.status');
-      dot.dataset.state = state;
-      if (state === 'up') { dot.style.background = getComputedStyle(document.documentElement).getPropertyValue('--good'); status.textContent = label || 'Up' + (code ? ' — ' + code : ''); }
-      else if (state === 'degraded') { dot.style.background = getComputedStyle(document.documentElement).getPropertyValue('--degraded'); status.textContent = label || 'Degraded' + (code ? ' — ' + code : ''); }
-      else if (state === 'down') { dot.style.background = getComputedStyle(document.documentElement).getPropertyValue('--down'); status.textContent = label || 'Down' + (code ? ' — ' + code : ''); }
-      else { dot.style.background = getComputedStyle(document.documentElement).getPropertyValue('--muted'); status.textContent = label || 'Unknown'; }
-    }
-
-    async function checkTarget(t) {
-      const name = t.name;
       try {
-        // Try to fetch the root; many sites will block cross-origin requests in browsers.
         const resp = await fetchWithTimeout(t.url, { timeout: 7000 });
-        // If we get a Response object, interpret status
-        if (resp && typeof resp.status === 'number') {
-          if (resp.status >= 200 && resp.status < 300) {
-            setStatus(name, 'up', '200 OK', resp.status);
-          } else if (resp.status >= 300 && resp.status < 400) {
-            setStatus(name, 'degraded', 'Redirect', resp.status);
-          } else if (resp.status >= 400 && resp.status < 600) {
-            setStatus(name, 'down', 'Bad response', resp.status);
-          } else {
-            setStatus(name, 'unknown', 'Unexpected response', resp.status);
-          }
+        const code = resp.status;
+        if (code >= 200 && code < 300) {
+          dot.style.background = 'var(--good)';
+          status.textContent = '200 OK';
+        } else if (code >= 300 && code < 400) {
+          dot.style.background = 'var(--degraded)';
+          status.textContent = 'Redirect';
         } else {
-          // fetch returned something unexpected (rare)
-          setStatus(name, 'unknown', 'No status', null);
+          dot.style.background = 'var(--down)';
+          status.textContent = 'Error ' + code;
         }
-      } catch (err) {
-        // Network error, timeout, or CORS blocked fetch will surface here
-        // Distinguish timeout vs CORS vs network via message where possible
-        const msg = (err && err.message) ? err.message.toLowerCase() : '';
-        if (msg.includes('timeout')) {
-          setStatus(name, 'down', 'Timeout');
-        } else if (msg.includes('failed') || msg.includes('network')) {
-          setStatus(name, 'down', 'Network error');
-        } else {
-          // Likely CORS or opaque response
-          // Conservative: mark as potentially down but show note
-          setStatus(name, 'degraded', 'Potentially down (CORS / blocked)');
-        }
+      } catch {
+        dot.style.background = 'var(--down)';
+        status.textContent = 'Unreachable';
       }
     }
 
-    async function loadIncidents() {
+    async function runChecks() {
+      lastCheckedEl.textContent = new Date().toLocaleString();
+      for (const t of TARGETS) checkTarget(t);
+    }
+
+    async function loadCurrentIncidents() {
       try {
-        const res = await fetch('/incidents.json', { cache: 'no-store' });
-        if (!res.ok) throw new Error('incidents.json fetch failed ' + res.status);
+        const res = await fetch('/incidents.json');
+        if (!res.ok) throw new Error();
         const data = await res.json();
-        renderIncidents(data);
-      } catch (e) {
-        incidentsListEl.innerHTML = '<div class="small muted">Incidents unavailable; using local fallback.</div>';
-        // fallback: show a short example if incidents.json not available
-        incidentsListEl.innerHTML += '<div class="incident-item"><strong>No active incidents</strong><div class="small muted">\/incidents.json missing or blocked</div></div>';
+        renderCurrent(data);
+      } catch {
+        currentEl.innerHTML = '<div class="incident-item"><strong>No active incidents</strong></div>';
       }
     }
 
-    function renderIncidents(list) {
+    function renderCurrent(list) {
       if (!list || Object.keys(list).length === 0) {
-        incidentsListEl.innerHTML = '<div class="incident-item"><strong>No active incidents</strong></div>';
+        currentEl.innerHTML = '<div class="incident-item"><strong>No active incidents</strong></div>';
         return;
       }
-      incidentsListEl.innerHTML = '';
-      // list is expected to be an object where keys are "1/incident.JSON" or similar
+      currentEl.innerHTML = '';
       Object.keys(list).forEach(k => {
         const path = list[k];
-        // attempt to fetch each incident file
-        const container = document.createElement('div');
-        container.className = 'incident-item';
-        container.textContent = 'Loading ' + path + '…';
-        incidentsListEl.appendChild(container);
-        fetch(path, { cache: 'no-store' }).then(r => {
-          if (!r.ok) throw new Error('not ok ' + r.status);
-          return r.json();
-        }).then(inc => {
-          const sevColor = (inc.severity === 1) ? 'var(--degraded)' : (inc.severity === 2) ? 'var(--down)' : (inc.severity === 3) ? 'black' : 'var(--muted)';
-          container.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center"><div><strong>' + escapeHtml(inc.title || 'Untitled') + '</strong><div class="small muted">' + escapeHtml(inc.description || '') + '</div></div><div style="text-align:right"><div style="font-weight:700;color:' + sevColor + '">Severity ' + inc.severity + '</div><div class="small muted">' + (inc.from || 'N/A') + ' → ' + (inc.to || 'N/A') + '</div></div></div>';
-        }).catch(err => {
-          container.innerHTML = '<strong>' + escapeHtml(path) + '</strong><div class="small muted">Could not load incident file</div>';
+        const box = document.createElement('div');
+        box.className = 'incident-item';
+        box.textContent = 'Loading ' + path + '…';
+        currentEl.appendChild(box);
+        fetch(path).then(r => r.json()).then(i => {
+          box.innerHTML = `<strong>${i.title}</strong><div class="small">${i.description || ''}</div><div class="small">${i.from || ''} → ${i.to || ''}</div>`;
+        }).catch(() => {
+          box.innerHTML = `<strong>${path}</strong><div class="small">Could not load incident file</div>`;
         });
       });
     }
 
-    function escapeHtml(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
-
-    async function runChecks() {
-      lastCheckedEl.textContent = new Date().toLocaleString();
-      // reset UI spinners
-      TARGETS.forEach(t => {
-        const card = document.getElementById('svc-' + t.name);
-        if (card) {
-          card.querySelector('.status').innerHTML = '<span class="spinner"></span>';
-          card.querySelector('.dot').style.background = getComputedStyle(document.documentElement).getPropertyValue('--muted');
+    function loadPast(dateStr) {
+      pastListEl.innerHTML = `<div class="small">Loading incidents for ${dateStr}…</div>`;
+      fetch(`/incidents/${dateStr}.json`).then(r => r.json()).then(list => {
+        if (!list.length) {
+          pastListEl.innerHTML = `<div class="small">No incidents for ${dateStr}</div>`;
+        } else {
+          pastListEl.innerHTML = list.map(i => `<div class="incident-item"><strong>${i.title}</strong><div class="small">${i.description}</div><div class="small">${i.from} → ${i.to}</div></div>`).join('');
         }
+      }).catch(() => {
+        pastListEl.innerHTML = `<div class="small">No data for ${dateStr}</div>`;
       });
-
-      await Promise.all(TARGETS.map(t => checkTarget(t)));
     }
 
-    // initial load
-    loadIncidents();
-    runChecks();
+    // Tabs
+    const tabCurrent = document.getElementById('tab-current');
+    const tabPast = document.getElementById('tab-past');
+    tabCurrent.onclick = () => {
+      tabCurrent.classList.add('active'); tabPast.classList.remove('active');
+      currentEl.style.display = 'block'; pastEl.style.display = 'none';
+    };
+    tabPast.onclick = () => {
+      tabPast.classList.add('active'); tabCurrent.classList.remove('active');
+      currentEl.style.display = 'none'; pastEl.style.display = 'block';
+      loadPast(datePicker.value || new Date().toISOString().split('T')[0]);
+    };
 
-    // auto-refresh every 90 seconds
-    setInterval(() => { loadIncidents(); runChecks(); }, 90000);
+    // Date navigation
+    datePicker.value = new Date().toISOString().split('T')[0];
+    document.getElementById('prevDay').onclick = () => {
+      const d = new Date(datePicker.value); d.setDate(d.getDate() - 1);
+      datePicker.value = d.toISOString().split('T')[0];
+      loadPast(datePicker.value);
+    };
+    document.getElementById('nextDay').onclick = () => {
+      const d = new Date(datePicker.value); d.setDate(d.getDate() + 1);
+      datePicker.value = d.toISOString().split('T')[0];
+      loadPast(datePicker.value);
+    };
+    datePicker.onchange = () => loadPast(datePicker.value);
+
+    // Initial
+    runChecks();
+    loadCurrentIncidents();
+    setInterval(runChecks, 90000);
   </script>
 </body>
 </html>
